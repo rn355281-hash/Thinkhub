@@ -55,8 +55,6 @@ Two-Hand-Media-Volume-Control/
 │
 ├── peak.html
 ├── README.md
-└── assets/
-    └── screenshots/
 ```
 
 > The file names may be different depending on the final project structure.
