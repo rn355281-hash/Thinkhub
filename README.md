@@ -35,14 +35,14 @@ So, instead of manually pressing the volume buttons, the user can simply use the
 
 The main gesture used in the project is based on the distance between the two hands.
 
-* **Hands closer together → Lower volume**
-* **Hands farther apart → Higher volume**
+* **Hands down → Lower volume**
+* **Hands up → Higher volume**
 
 The exact gesture behaviour can be adjusted depending on how the project is implemented.
 
 ## 🛠️ Technologies Used
 
-* **Python** – Main programming language
+* **HTML,CSS3,JavaScript** – Main programming language
 * **OpenCV** – Used for camera input and image processing
 * **MediaPipe** – Used for real-time hand detection and tracking
 * **Computer Vision** – Used to interpret hand movements
