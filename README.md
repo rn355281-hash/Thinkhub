@@ -77,7 +77,7 @@ When the program starts, make sure camera permission is enabled. The camera is r
 
 Step 3. Control the volume
 
-Place both hands in front of the camera and change the distance between them to control the media volume.
+Place both hands in front of the camera and change the distance between them vertically to control the media volume.Only works when both hands are in the frame (try keeping the volume at 50% from the start of the video till the end and see what happens!)
 
 ## 💡 Why This Project?
 
