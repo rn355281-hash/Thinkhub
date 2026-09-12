@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Hand Controlled Media Player</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #080808;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 25px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.file-area {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+input[type="file"] {
+    background: #222;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.player {
+    background: #111;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(255,255,255,0.08);
+}
+
+#mediaPlayer {
+    width: 100%;
+    max-height: 600px;
+    display: block;
+    background: black;
+}
+
+.audio-placeholder {
+    height: 300px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 100px;
+    background: #111;
+}
+
+.controls {
+    padding: 18px;
+}
+
+.progress {
+    width: 100%;
+    cursor: pointer;
+}
+
+.buttons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+button {
+    background: #292929;
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+button:hover {
+    background: #444;
+}
+
+.volume-container {
+    flex: 1;
+    min-width: 250px;
+}
+
+.volume-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+#volumePercent {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+#volumeBar {
+    width: 100%;
+}
+
+.status {
+    text-align: center;
+    margin-top: 20px;
+    padding: 14px;
+    background: #151515;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.tracking-status {
+    text-align: center;
+    margin-top: 10px;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.camera-box {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 240px;
+    height: 180px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid #444;
+    background: black;
+    z-index: 10;
+}
+
+#cameraVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.result-screen {
+    position: fixed;
+    inset: 0;
+    background: black;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.result-screen img {
+    max-width: 80%;
+    max-height: 65vh;
+    border-radius: 8px;
+}
+
+.cinema-title {
+    font-size: clamp(35px, 7vw, 90px);
+    font-weight: 900;
+    letter-spacing: 8px;
+    margin-top: 25px;
+}
+
+.cinema-subtitle {
+    margin-top: 10px;
+    color: #aaa;
+    font-size: 16px;
+}
+
+@media(max-width:700px) {
+    .camera-box {
+        width: 160px;
+        height: 120px;
+        right: 10px;
+        bottom: 10px;
+    }
+
+    .cinema-title {
+        letter-spacing: 3px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🎬 Hand Controlled Media Player</h1>
+
+    <div class="file-area">
+        <input
+            id="mediaInput"
+            type="file"
+            accept="video/*,audio/*"
+        >
+    </div>
+
+    <div class="player">
+
+        <video
+            id="mediaPlayer"
+            playsinline>
+        </video>
+
+        <div
+            id="audioPlaceholder"
+            class="audio-placeholder">
+            🎵
+        </div>
+
+        <div class="controls">
+
+            <input
+                id="progress"
+                class="progress"
+                type="range"
+                min="0"
+                max="100"
+                value="0"
+            >
+
+            <div class="buttons">
+
+                <button id="playBtn">
+                    ▶ Play
+                </button>
+
+                <button id="muteBtn">
+                    🔊 Mute
+                </button>
+
+                <div class="volume-container">
+
+                    <div class="volume-title">
+                        <span>Hand Volume</span>
+
+                        <strong id="volumePercent">
+                            0%
+                        </strong>
+                    </div>
+
+                    <input
+                        id="volumeBar"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value="0"
+                        disabled
+                    >
+
+                </div>
+
+                <button id="fullscreenBtn">
+                    ⛶ Fullscreen
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="status" class="status">
+        Starting camera...
+    </div>
+
+    <div id="trackingStatus" class="tracking-status">
+        Hand tracker loading...
+    </div>
+
+</div>
+
+
+<!-- CAMERA -->
+
+<div class="camera-box">
+
+    <video
+        id="cameraVideo"
+        autoplay
+        muted
+        playsinline>
+    </video>
+
+</div>
+
+
+<!-- FINAL SCREEN -->
+
+<div
+    id="resultScreen"
+    class="result-screen">
+
+    <img id="finalPhoto">
+
+    <div class="cinema-title">
+        ABSOLUTE CINEMA
+    </div>
+
+    <div class="cinema-subtitle">
+        🎬 You actually held it above 50%
+    </div>
+
+</div>
+
+
+<!-- BGM -->
+
+<audio
+    id="cinemaBGM"
+    src="fahhhhh.mp3"
+    preload="auto">
+</audio>
+
+
+<script>
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const mediaInput =
+    document.getElementById("mediaInput");
+
+const mediaPlayer =
+    document.getElementById("mediaPlayer");
+
+const audioPlaceholder =
+    document.getElementById("audioPlaceholder");
+
+const playBtn =
+    document.getElementById("playBtn");
+
+const muteBtn =
+    document.getElementById("muteBtn");
+
+const fullscreenBtn =
+    document.getElementById("fullscreenBtn");
+
+const progress =
+    document.getElementById("progress");
+
+const volumeBar =
+    document.getElementById("volumeBar");
+
+const volumePercent =
+    document.getElementById("volumePercent");
+
+const status =
+    document.getElementById("status");
+
+const trackingStatus =
+    document.getElementById("trackingStatus");
+
+const cameraVideo =
+    document.getElementById("cameraVideo");
+
+const resultScreen =
+    document.getElementById("resultScreen");
+
+const finalPhoto =
+    document.getElementById("finalPhoto");
+
+const cinemaBGM =
+    document.getElementById("cinemaBGM");
+
+
+let mediaURL = null;
+
+let currentVolume = 0;
+
+let challengeStarted = false;
+
+let challengeFailed = false;
+
+
+/* =========================================================
+   MEDIA FILE
+========================================================= */
+
+mediaInput.addEventListener("change", function() {
+
+    const file = this.files[0];
+
+    if (!file) return;
+
+    if (mediaURL) {
+        URL.revokeObjectURL(mediaURL);
+    }
+
+    mediaURL =
+        URL.createObjectURL(file);
+
+    mediaPlayer.src =
+        mediaURL;
+
+    mediaPlayer.load();
+
+    challengeStarted = false;
+    challengeFailed = false;
+
+    setVolume(0);
+
+    if (file.type.startsWith("audio/")) {
+
+        mediaPlayer.style.display = "none";
+
+        audioPlaceholder.style.display = "flex";
+
+    } else {
+
+        mediaPlayer.style.display = "block";
+
+        audioPlaceholder.style.display = "none";
+
+    }
+
+    status.textContent =
+        "Media loaded. Raise BOTH hands.";
+
+});
+
+
+/* =========================================================
+   PLAY / PAUSE
+========================================================= */
+
+playBtn.addEventListener("click", function() {
+
+    if (mediaPlayer.paused) {
+
+        mediaPlayer.play();
+
+    } else {
+
+        mediaPlayer.pause();
+
+    }
+
+});
+
+mediaPlayer.addEventListener("play", function() {
+
+    playBtn.textContent = "⏸ Pause";
+
+});
+
+mediaPlayer.addEventListener("pause", function() {
+
+    playBtn.textContent = "▶ Play";
+
+});
+
+
+/* =========================================================
+   MUTE
+========================================================= */
+
+muteBtn.addEventListener("click", function() {
+
+    mediaPlayer.muted =
+        !mediaPlayer.muted;
+
+    if (mediaPlayer.muted) {
+
+        muteBtn.textContent =
+            "🔇 Unmute";
+
+    } else {
+
+        muteBtn.textContent =
+            "🔊 Mute";
+
+    }
+
+});
+
+
+/* =========================================================
+   PROGRESS BAR
+========================================================= */
+
+mediaPlayer.addEventListener("timeupdate", function() {
+
+    if (!mediaPlayer.duration) return;
+
+    progress.value =
+        (mediaPlayer.currentTime /
+        mediaPlayer.duration) * 100;
+
+});
+
+progress.addEventListener("input", function() {
+
+    if (!mediaPlayer.duration) return;
+
+    mediaPlayer.currentTime =
+        (progress.value / 100) *
+        mediaPlayer.duration;
+
+});
+
+
+/* =========================================================
+   FULLSCREEN
+========================================================= */
+
+fullscreenBtn.addEventListener("click", function() {
+
+    const player =
+        document.querySelector(".player");
+
+    if (!document.fullscreenElement) {
+
+        player.requestFullscreen().catch(() => {});
+
+    } else {
+
+        document.exitFullscreen();
+
+    }
+
+});
+
+
+/* =========================================================
+   MEDIAPIPE HANDS
+========================================================= */
+
+const hands = new Hands({
+
+    /*
+       IMPORTANT:
+       Keep the URL on the SAME line as return.
+    */
+
+    locateFile: function(file) {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+    }
+
+});
+
+
+hands.setOptions({
+
+    maxNumHands: 2,
+
+    modelComplexity: 1,
+
+    minDetectionConfidence: 0.5,
+
+    minTrackingConfidence: 0.5
+
+});
+
+
+hands.onResults(onHandsResults);
+
+
+/* =========================================================
+   CAMERA START
+========================================================= */
+
+let cameraStarted = false;
+
+try {
+
+    const camera =
+        new Camera(cameraVideo, {
+
+            onFrame: async function() {
+
+                try {
+
+                    await hands.send({
+                        image: cameraVideo
+                    });
+
+                } catch(error) {
+
+                    console.error(
+                        "Hand tracking error:",
+                        error
+                    );
+
+                    trackingStatus.textContent =
+                        "❌ Hand tracker error";
+
+                }
+
+            },
+
+            width: 640,
+
+            height: 480
+
+        });
+
+
+    camera.start();
+
+    cameraStarted = true;
+
+    trackingStatus.textContent =
+        "📷 Camera started — show your hands";
+
+} catch(error) {
+
+    console.error(
+        "Camera error:",
+        error
+    );
+
+    trackingStatus.textContent =
+        "❌ Camera could not start";
+
+}
+
+
+/* =========================================================
+   HAND TRACKING SETTINGS
+========================================================= */
+
+const TOP = 0.10;
+
+const RAISED_LIMIT = 0.60;
+
+
+/* =========================================================
+   CALCULATE VOLUME
+========================================================= */
+
+function calculateVolume(y1, y2) {
+
+    /*
+       Use the LOWER of the two hands
+       to determine volume.
+
+       Smaller Y = higher hand.
+    */
+
+    const controllingY =
+        Math.max(y1, y2);
+
+    let volume =
+        1 -
+        (
+            (controllingY - TOP) /
+            (RAISED_LIMIT - TOP)
+        );
+
+    volume =
+        Math.max(
+            0,
+            Math.min(1, volume)
+        );
+
+    return volume;
+
+}
+
+
+/* =========================================================
+   HAND RESULTS
+========================================================= */
+
+function onHandsResults(results) {
+
+    trackingStatus.textContent =
+        "🟢 Hand tracking active";
+
+
+    const detectedHands =
+        results.multiHandLandmarks || [];
+
+
+    /* -----------------------------------------
+       EXACTLY TWO HANDS
+    ----------------------------------------- */
+
+    if (detectedHands.length !== 2) {
+
+        setVolume(0);
+
+        status.textContent =
+            "✋ Show EXACTLY TWO hands";
+
+        if (challengeStarted) {
+            challengeFailed = true;
+        }
+
+        return;
+    }
+
+
+    /* -----------------------------------------
+       GET PALM POSITIONS
+    ----------------------------------------- */
+
+    const hand1 =
+        detectedHands[0][9];
+
+    const hand2 =
+        detectedHands[1][9];
+
+
+    const y1 =
+        hand1.y;
+
+    const y2 =
+        hand2.y;
+
+
+    /* -----------------------------------------
+       BOTH HANDS MUST BE RAISED
+    ----------------------------------------- */
+
+    if (
+        y1 > RAISED_LIMIT ||
+        y2 > RAISED_LIMIT
+    ) {
+
+        setVolume(0);
+
+        status.textContent =
+            "⬆️ Raise BOTH hands";
+
+        if (challengeStarted) {
+            challengeFailed = true;
+        }
+
+        return;
+    }
+
+
+    /* -----------------------------------------
+       CALCULATE VOLUME
+    ----------------------------------------- */
+
+    const volume =
+        calculateVolume(y1, y2);
+
+    setVolume(volume);
+
+
+    /* -----------------------------------------
+       CHALLENGE
+    ----------------------------------------- */
+
+    if (!challengeStarted) {
+
+        if (volume > 0.50) {
+
+            challengeStarted = true;
+
+            challengeFailed = false;
+
+            status.textContent =
+                "🔥 CHALLENGE STARTED — STAY ABOVE 50%!";
+
+        } else {
+
+            status.textContent =
+                "▶ Video playing normally";
+
+        }
+
+    } else {
+
+        if (volume <= 0.50) {
+
+            challengeFailed = true;
+
+            status.textContent =
+                "❌ Challenge failed — video continues";
+
+        } else {
+
+            status.textContent =
+                "🔥 HOLD ABOVE 50%!";
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   SET VOLUME
+========================================================= */
+
+function setVolume(volume) {
+
+    currentVolume =
+        volume;
+
+    mediaPlayer.volume =
+        volume;
+
+
+    const percent =
+        Math.round(volume * 100);
+
+
+    volumeBar.value =
+        percent;
+
+
+    volumePercent.textContent =
+        percent + "%";
+
+}
+
+
+/* =========================================================
+   VIDEO END
+========================================================= */
+
+mediaPlayer.addEventListener("ended", function() {
+
+    if (
+        challengeStarted &&
+        !challengeFailed
+    ) {
+
+        captureFinalPhoto();
+
+    } else {
+
+        status.textContent =
+            "Video finished.";
+
+    }
+
+});
+
+
+/* =========================================================
+   CAPTURE PHOTO
+========================================================= */
+
+function captureFinalPhoto() {
+
+    const canvas =
+        document.createElement("canvas");
+
+    const width =
+        cameraVideo.videoWidth || 640;
+
+    const height =
+        cameraVideo.videoHeight || 480;
+
+    canvas.width =
+        width;
+
+    canvas.height =
+        height;
+
+
+    const ctx =
+        canvas.getContext("2d");
+
+
+    /* MIRROR */
+
+    ctx.translate(
+        width,
+        0
+    );
+
+    ctx.scale(
+        -1,
+        1
+    );
+
+
+    ctx.drawImage(
+        cameraVideo,
+        0,
+        0,
+        width,
+        height
+    );
+
+
+    /* GRAYSCALE */
+
+    const imageData =
+        ctx.getImageData(
+            0,
+            0,
+            width,
+            height
+        );
+
+    const pixels =
+        imageData.data;
+
+
+    for (
+        let i = 0;
+        i < pixels.length;
+        i += 4
+    ) {
+
+        const r =
+            pixels[i];
+
+        const g =
+            pixels[i + 1];
+
+        const b =
+            pixels[i + 2];
+
+
+        const gray =
+            0.299 * r +
+            0.587 * g +
+            0.114 * b;
+
+
+        pixels[i] =
+            gray;
+
+        pixels[i + 1] =
+            gray;
+
+        pixels[i + 2] =
+            gray;
+
+    }
+
+
+    ctx.putImageData(
+        imageData,
+        0,
+        0
+    );
+
+
+    finalPhoto.src =
+        canvas.toDataURL(
+            "image/jpeg",
+            0.95
+        );
+
+
+    resultScreen.style.display =
+        "flex";
+
+
+    /* PLAY BGM */
+
+    cinemaBGM.currentTime = 0;
+
+    cinemaBGM.volume = 1;
+
+    cinemaBGM.play().catch(function(error) {
+
+        console.log(
+            "BGM autoplay blocked:",
+            error
+        );
+
+    });
+
+}
+
+
+/* =========================================================
+   CLOSE CINEMA SCREEN
+========================================================= */
+
+document.addEventListener("keydown", function(event) {
+
+    if (
+        event.key === "Escape" &&
+        resultScreen.style.display === "flex"
+    ) {
+
+        closeResult();
+
+    }
+
+});
+
+
+function closeResult() {
+
+    resultScreen.style.display =
+        "none";
+
+    cinemaBGM.pause();
+
+    cinemaBGM.currentTime =
+        0;
+
+}
+
+
+/* =========================================================
+   INITIAL VALUE
+========================================================= */
+
+setVolume(0);
+
+</script>
+
+</body>
+</html>
