@@ -1,5 +1,11 @@
 # 🎵 Two-Hand Media Volume Control
 
+TEAM NAME: APEX
+
+Team Members: 
+Member 1: Prajesh S Pillai (Lourdes Matha College of Science and Technology)
+Member 2: Rohit Nair (Lourdes Matha College of Science and Technology)
+
 ## About the Project
 
 **Two-Hand Media Volume Control** is a simple and interactive project that allows users to control the media volume using hand gestures instead of using the keyboard, mouse, or physical volume buttons.
